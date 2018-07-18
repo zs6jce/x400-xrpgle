@@ -1,0 +1,364 @@
+grammar bz.erasmus.x400.xrpgle.xtext.XRPGLE with org.eclipse.xtext.common.Terminals hidden(ML_COMMENT, EXEC_SQL)
+
+generate xRPGLE "http://www.erasmus.bz/x400/xrpgle/xtext/XRPGLE"
+
+Model: {Model}
+	statments+=AbstractStatement*;
+
+AbstractStatement: {AbstractStatement}
+	('**FREE' WS)
+	statements+=Statement*
+	('**END-FREE' WS)?
+;
+Statement:
+	AbstractCompilerDirective	|	
+	AbstractControl				|
+	AbstractFileDescription		|
+	AbstractDefinition			|
+	AbstractCalculation
+;
+
+/*******************************************************************************
+ * Control Options (H-Specs)
+ * 
+ **/
+AbstractControl:
+	Control
+;
+Control:
+	'CTL-OPT' keywords+=(GenericKeyword)+ ';'
+;
+
+/*******************************************************************************
+ * File Descriptions (F-Specs)
+ * 
+ **/
+AbstractFileDescription:
+	FileDescription
+;
+FileDescription:
+	'DCL-F' name=ID keywords+=(GenericKeyword)* ';'
+;
+//--------------------------------------------------------------------------
+
+/******************************************************************************
+ * Definition (D-Specs)
+ *
+ **/
+AbstractDefinition:
+	StandAloneField	|
+	NamedConstant	|
+	DataStructure	|
+	Prototype		|
+	ProcedureDef	|
+	ProcedureInterface
+;
+
+StandAloneField:
+	'DCL-S' name=ID keywords+=(GenericKeyword)* ';'
+;
+
+NamedConstant:
+	'DCL-C' name=ID keywords+=(GenericKeyword)* ';'
+;
+
+DataStructure:
+	'DCL-DS' name=ID keywords+=(GenericKeyword)* ';'
+	subf+=(DataStructureSubField)*
+	'END-DS' ';'
+;
+
+DataStructureSubField:
+	('DCL-SUBF')? name=ID keywords+=(GenericKeyword)* ';' 
+;
+
+Prototype:
+	'DCL-PR' name=ID keywords+=(GenericKeyword)* ';'
+	parms+=(PrototypedParameter)*
+	'END-PR' ';'
+;
+
+ProcedureDef:
+	'DCL-PROC' name=ID keywords+=(GenericKeyword)* ';'
+	declaration+=(AbstractDeclaration)*
+	statements+=AbstractCalculation*
+	onerror=ProcedureDefOnERROR
+	'END-PROC' ';'
+;
+ProcedureDefOnERROR:
+	{ProcedureDefOnERROR} 'ON-EXIT' ';'
+	statements+=AbstractCalculation*
+;
+
+ProcedureInterface:
+	'DCL-PI' name=(ID|'*N') keywords+=(GenericKeyword)* ';'
+	parms+=(PrototypedParameter)*
+	'END-PI' ';'
+;
+
+PrototypedParameter:
+	('DCL-PARM')? name=ID keywords+=(GenericKeyword)* ';'
+;
+/******************************************************************************
+ * Expressions & Calculations (C-Specs)
+ * 
+ */
+ 
+AbstractCalculation:
+	CalculationAssignment		|
+	CalculationProcedureCall	|
+	CalculationReturn			|
+	AbstactCalculationBlock
+;
+
+CalculationAssignment:
+//  VariableAssignment:
+//  The assignment operators are:
+//	-->	  = The expression is assigned to the target
+//	-->	 += The expression is added to the target
+//	-->	 -= The expression is subtracted from the target
+//	-->  *= The target is multiplied by the expression
+//	-->	 /= The target is divided by the expression
+//	-->	**= The target is assigned the target raised to the power of the expression
+	eval?=('EVAL')?
+	tgtvar=[StandAloneField]
+	op=( '=' | '+=' | '-=' | '*=' | '/=' | '**=' )
+	exp=Expression ';'
+;
+
+CalculationProcedureCall: //ProcedureCallStatement:
+	callp?=('CALLP')?
+	call=ProcedureCall ';'
+;
+
+CalculationReturn:
+	{CalculationReturn} 'RETURN' (exp=Expression)? ';'
+;
+AbstactCalculationBlock: //AbstractStatement:
+	CalculationBlockDO		|
+	CalculationBlockFOR		|
+	CalculationBlockIF		|	
+	CalculationBlockMONITOR	|
+	CalculationBlockSELECT	|
+	CalculationBlockSUBROUTINE
+; 
+CalculationBlockDO: {CalculationBlockDO} 
+	(type='DOW'| type='DOU') condition=Expression ';'
+	statements+=AbstractCalculation*
+	'ENDDO' ';'
+;
+CalculationBlockFOR:
+// https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_73/rzasd/zzfor.htm
+	'FOR' indexname=Expression 
+		( ('BY'		by=Expression)	|
+		  ('TO'		to=Expression)	|
+		  ('DOWNTO' downto=Expression)
+		)';'
+	statements+=AbstractCalculation*
+	'ENDFOR' ';'
+;
+CalculationBlockIF:
+	'IF' condition=Expression ';'
+	 statements+=AbstractCalculation*
+     elseifs+=CalculationBlockIfELSEIF*
+     else=CalculationBlockIfELSE?
+	'ENDIF' ';'
+;
+CalculationBlockIfELSEIF:
+	'ELSEIF' condition=Expression ';'
+	statements+=AbstractCalculation*
+;
+CalculationBlockIfELSE:
+	{CalculationBlockIfELSE} 'ELSE' ';'
+	statements+=AbstractCalculation*
+;
+CalculationBlockMONITOR:
+	{CalculationBlockMONITOR} 'MONITOR' ';'
+	statements+=AbstractCalculation*
+	onerror=CalculationBlockMonitorONERROR?
+	'ENDMON' ';'
+;
+CalculationBlockMonitorONERROR:
+	{CalculationBlockMonitorONERROR} 'ON-ERROR' ';'
+	statements+=AbstractCalculation*
+;	
+CalculationBlockSELECT:
+	'SELECT'
+	whens+=CalculationBlockSelectWHEN*
+	other?='OTHER' ';'
+	'ENDSL' ';'
+;
+CalculationBlockSelectWHEN:
+	'WHEN' condition=Expression ';'
+	statements+=AbstractCalculation*
+;
+CalculationBlockSUBROUTINE:
+	'BEGSR' name=ID ';'
+	statements+=AbstractCalculation*
+	'ENDSR' ';'
+;
+
+/* Expressions Precedence: 
+ * 	--> ()
+ * 	--> Built-in functions, user-defined functions
+ * 	--> unary +, unary -, NOT
+ * 	--> **
+ * 	--> *, /
+ * 	--> binary +, binary -
+ * 	--> =, <>, >, >=, <, <=
+ * 	--> AND
+ * 	--> OR
+ * 
+ ***/
+Expression: Or;
+Or returns Expression:
+	And (
+		{Or.left=current} 'OR'
+		right=And
+	)*;
+And returns Expression:
+	Comparison (
+		{And.left=current} 'AND'
+		right=Comparison
+	)*;
+Comparison returns Expression:
+	BinaryPlusOrMinus (
+		{Comparison.left=current} op=('=' | '<>' | '>=' | '<=' | '>' | '<')
+		right=BinaryPlusOrMinus
+	)*;
+BinaryPlusOrMinus returns Expression:
+	MulOrDiv (
+		({BinPlus.left=current} '+' | {BinMinus.left=current} '-')
+		right=MulOrDiv
+	)*;
+MulOrDiv returns Expression:
+	Exponent (
+		({MulOrDiv.left=current} op=('*' | '/'))
+		right=Exponent
+	)*;
+Exponent returns Expression:
+	UnaryPlusMinusOrNot (
+		{Exponent.left=current} '**'
+		right=UnaryPlusMinusOrNot
+	)?;
+UnaryPlusMinusOrNot returns Expression:
+	 (
+	 ({UnaryPlus}'+' right=FunctionExp | {UnaryMinus}'-'  right=FunctionExp) | ('NOT' right=FunctionExp)
+	
+	) | FunctionExp;
+FunctionExp returns Expression:
+	Primary | (
+		(func=ProcedureCall)
+	);
+Primary returns Expression:
+	'(' Expression ')' |
+	Atomic
+	;
+Atomic returns Expression:
+	varorval=[VariableOrConstDef]	|
+	{IntConstant} value=INT			|
+	{StringConstant} value=STRING	|
+	{BooleanConstant} value=BOOL
+	;
+
+/******************************************************************************
+ * Helper Rules
+ **/
+ 
+AbstractDeclaration:
+	FileDescription			| 
+	StandAloneField			|
+	NamedConstant			|
+	DataStructure			|
+	ProcedureInterface		|
+	Prototype
+;
+
+ProcedureCall:
+	name=[ProcedureCallRef]
+	('('
+ 		(params+=Expression (':' params+=Expression)*)?
+ 	')')
+;
+ProcedureCallRef:
+   Prototype | ProcedureDef
+;
+
+GenericKeyword:
+	name=ID ('(' 
+		params+=GenericKeywordParms (':' params+=GenericKeywordParms)*
+	')')? 	
+;
+GenericKeywordParms:
+	STRING|SPLAT_OPERATOR|ID|INT
+;
+
+VariableOrConstDef:
+	StandAloneField | NamedConstant
+; 
+
+/*******************************************************************************
+ * Compiler Directive  
+ * 
+ **/
+AbstractCompilerDirective: 
+	CompilerDirectiveINCLUDE	|
+	CompilerDirectiveCOPY		|
+	CompilerDirectiveDEFINE		|
+	CompilerDirectiveBlockIF	|
+	CompilerDirectiveEOF		|
+	CompilerDirectiveFREE
+;
+CompilerDirectiveINCLUDE returns CompilerDirective:
+	'/INCLUDE' name=ID WS
+;
+CompilerDirectiveCOPY returns CompilerDirective:
+	'/COPY' name=ID WS
+;
+CompilerDirectiveDEFINE returns CompilerDirective:
+	'/DEFINE' name=ID WS
+;
+CompilerDirectiveBlockIF returns CompilerDirective:
+	'/IF' (not='NOT')? def='DEFINED' '(' name=ID ')' WS
+	statments+=Statement+
+	'/ENDIF' WS
+;
+CompilerDirectiveEOF returns CompilerDirective:
+	{CompilerDirectiveEOF} '/EOF' WS
+;
+CompilerDirectiveFREE returns CompilerDirective:
+	'/FREE' WS
+	statments+=Statement+
+	'/END-FREE' WS
+;
+
+//--------------------------------------------------------------------------
+
+/******************************************************************************
+ * Terminals
+ **/
+
+terminal BOOL:
+	'*ON' | '*OFF'
+;
+//terminal fragment DIGIT: ('0'..'9');
+//terminal UNS returns ecore::EInt: DIGIT+;
+//terminal INT returns ecore::EInt: '^'?('+'|'-') DIGIT+;
+//terminal NUM returns ecore::EDouble: ('-'|'+')? DIGIT* '.' DIGIT+;
+
+terminal SPLAT_OPERATOR: ('*')('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+
+@Override 
+terminal ID: //https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_73/rzasd/symbol9.htm#symbol9
+	'^'?('a'..'z'|'A'..'Z'|'$'|'#'|'@') ('a'..'z'|'A'..'Z'|'$'|'#'|'@'|'_'|'0'..'9')*
+;
+
+@Override 
+terminal STRING		: "'" (!"'"|"''")* "'";
+
+terminal EXEC_SQL	: ('EXEC'|'Exec'|'exec') -> ';';
+
+@Override 
+terminal ML_COMMENT	: SL_COMMENT;
+
+//------------------------------------------------------------------------------

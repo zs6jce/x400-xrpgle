@@ -1,0 +1,232 @@
+grammar free.as400.Rpgle with org.eclipse.xtext.common.Terminals
+
+generate rpgle "http://www.as400.free/Rpgle"
+
+Model:
+	specifications+=Specifications+	
+	;
+
+Specifications:
+{Specifications} ( 
+	('**FREE'
+	  ( ctl_opt	+= CTL_OPT  | // Compiler Control Options
+		dcl_f	+= DCL_F	| // Database Table Access Declaration
+		dcl_pr	+= DCL_PR   | // Header / Prototype Definitions for procedure calls  
+		dcl_ds	+= DCL_DS 	| // Data Structure Definitions
+		dcl_s	+= DCL_S	  // Variable Definitions	
+	  )
+	'**END-FREE'?)		
+)
+;
+
+//CTL-OPT Control Options (HSpec) ----------------------------------------------
+CTL_OPT:
+	'CTL-OPT' (	ALLOC	   |
+				ACTGRP	   |
+				ALTSEQ	   |
+				ALWNULL	   |		
+				AUT		   |
+				BNDDIR	   |
+//				CCSID	   |
+				CCSIDCVT   |
+				COPYNEST   |
+				COPYRIGHT  |
+				CURSYM	   |
+				CVTOPT	   |
+				DCLOPT	   |
+//				DATEDIT	   |
+//				DATEFMT	   |
+				DEBUG	   |
+				DECEDIT	   |
+				DECPREC	   |
+				DFTACTGRP  |
+				DFTNAME	   |
+				ENBPFRCOL  |
+				EXPROPTS   |
+				EXTBININT  |
+				FIXNBR	   |
+				FLTDIV	   |
+				FORMSALIGN |
+				FTRANS	   |
+				GENLVL	   |
+				INDENT	   |
+				INTPREC	   |
+				LANGID	   |
+				MAIN	   |
+				NOMAIN	   |
+				OPENOPT	   |
+				OPTIMIZE   |
+				OPTION	   |
+				PGMINFO	   |
+				PRFDTA	   |
+				SRTSEQ	   |
+				STGMDL	   |
+				TEXT	   |
+				THREAD	   |
+//				TIMFMT	   |
+				TRUNCNBR   |
+				USRPRF	   |
+				VALIDATE   
+			)
+	';'
+;
+
+// ALLOC(*STGMDL | *TERASPACE | *SNGLVL) ........... . 5-16
+ALLOC: 	'ALLOC' '(' ('*STGMDL'|'*TERASPACE'|'*SNGLVL') ')';
+	
+// ACTGRP(*STGMDL | *NEW | *CALLER | 'activation-group-name') ...... . 5-16
+ACTGRP:	'ACTGRP' '(' ('*STGMDL' | '*NEW' | '*CALLER' | STRING) ')';
+
+// ALTSEQ{(*NONE | *SRC | *EXT)} ... . 5-17
+ALTSEQ: 'ALTSEQ' ( '*NONE' | '*SRC' | '*EXT')?;
+	
+// ALWNULL(*NO | *INPUTONLY | *USRCTL) ........... . 5-17
+ALWNULL: 'ALWNULL' '(' ('*NO' | '*INPUTONLY' | '*USRCTL' ) ')';
+	
+// AUT(*LIBRCRTAUT | *ALL | *CHANGE | *USE | *EXCLUDE | 'authorization-listname') ............ . 5-18
+AUT: 'AUT' '(' ('*LIBRCRTAUT' | '*ALL' | '*CHANGE' | '*USE' | '*EXCLUDE' | STRING) ')'; 
+
+// BNDDIR('binding-directory-name' {:'binding-directory-name'...}) ..... . 5-18
+BNDDIR: 'BNDDIR' '(' STRING (':' STRING)* ')';
+	
+// CCSID control keyword ...... . 5-19
+// CCSID(*EXACT) ........ . 5-19
+// CCSID(*CHAR : *JOBRUN | *JOBRUNMIX | *UTF8 | *HEX | number) ........... . 5-19
+// CCSID(*GRAPH : *JOBRUN | *SRC | *HEX | *IGNORE | number).... . 5-20
+// CCSID(*UCS2 : *UTF16 | number) . . . 5-21
+// CCSID: ('CCSID' '(' '*EXACT' 															 ')'	|
+//	  	   'CCSID' '(' '*CHAR'  ':' ('*JOBRUN' | '*JOBRUNMIX'	| '*UTF8' | '*HEX'	  | INT) ')'	|
+//		   'CCSID' '(' '*GRAPH' ':' ('*JOBRUN' | 'SRC'			| '*HEX'  | '*IGNORE' | INT) ')'	|
+//		   'CCSID' '(' '*UCS2'	':' ('*UTF16'  | INT									   ) ')' 
+//			)+
+//	; 
+
+// CCSIDCVT(*EXCP | *LIST) ..... . 5-21
+CCSIDCVT: 'CCSIDCVT' '(' ( '*EXCP' | '*LIST') ')';
+	
+// COPYNEST(number) ....... . 5-23
+COPYNEST: 'COPYNEST' '(' INT ')';
+	
+// COPYRIGHT('copyright string') .... . 5-23
+COPYRIGHT: 'COPYRIGHT' '(' STRING ')';
+
+// CURSYM('sym') ......... . 5-23
+CURSYM: 'CURSYM' '(' STRING ')';
+	
+// CVTOPT(*{NO}DATETIME *{NO}GRAPHIC *{NO}VARCHAR *{NO}VARGRAPHIC) . . 5-24
+CVTOPT: 'CVTOPT' '(' (  ('*DATETIME'  | '*NODATETIME'  ) |
+						('*GRAPHIC'	  | '*NOGRAPHIC'   ) |
+						('*VARCHAR'	  | '*NOVARCHAR'   ) |
+						('VARGRAPHIC' | '*NOVARGRAPHIC')
+				  ) ')'
+;
+	
+// DCLOPT(*NOCHGDSLEN) ..... . 5-24
+DCLOPT: 'DCLOPT(*NOCHGDSLEN)';
+	
+// DATEDIT(fmt{separator}) ...... . 5-25
+// DATFMT(fmt{separator}) ...... . 5-25
+
+// DEBUG{(*INPUT | *DUMP | *XMLSAX | *NO | *YES)} .......... . 5-25
+DEBUG: 'DEBUG' ( '(' ('*INPUT' | '*DUMP' | '*XMLSAX' | '*NO' | '*YES' ) ')' )?;
+	
+// DECEDIT(*JOBRUN | 'value') .... . 5-26
+DECEDIT: 'DECEDIT' '(' ( '*JOBRUN' | STRING ) ')';
+	
+// DECPREC(30|31|63) ....... . 5-27
+DECPREC: 'DECPREC' '(' ('30' | '31' | '63') ')';
+
+// DFTACTGRP(*YES | *NO) ..... . 5-27
+DFTACTGRP: 'DFTACTGRP' '(' ('*YES' | '*NO' ) ')';
+	
+// DFTNAME(rpg_name) ....... . 5-28
+DFTNAME: 'DFTNAME' '(' STRING ')';
+	
+// ENBPFRCOL(*PEP | *ENTRYEXIT | *FULL) 5-28
+ENBPFRCOL: 'ENBPFRCOL' '(' ('*PEP' | '*ENTRYEXIT' | '*FULL') ')';
+	
+// EXPROPTS(*MAXDIGITS | *RESDECPOS) 5-29
+EXPROPTS: 'EXPROPTS' '(' ('*MAXDIGITS' | '*RESDECPOS') ')';
+	
+// EXTBININT{(*NO | *YES)} ..... . 5-29
+EXTBININT: 'EXTNININT' ( '(' ( '*NO' | '*YES') ')' )?;
+	
+// FIXNBR(*{NO}ZONED *{NO}INPUTPACKED) ....... . 5-29
+FIXNBR: 'FIXNBR' '(' ( ('*ZONED' | '*NOZONED') | ( '*INPUTPACKED' | '*NOINPUTPACKED') ) ')';
+
+// FLTDIV{(*NO | *YES)} ....... . 5-30
+FLTDIV: 'FLTDIV' ( '(' ( '*NO' | '*YES') ')' )?;
+ 	
+// FORMSALIGN{(*NO | *YES)} .... . 5-30
+FORMSALIGN: 'FORMSALIGN' ( '(' ( '*NO' | '*YES') ')' )?;
+	
+// FTRANS{(*NONE | *SRC)} ..... . 5-30
+FTRANS: 'FTRANS' ( '(' ( '*NONE' | '*SRC' )')')?;
+	
+// GENLVL(number) ........ . 5-30
+GENLVL: 'GENLVL' '(' INT ')';
+	
+// INDENT(*NONE | 'character-value') . . . 5-30
+INDENT: 'INDENT' '(' ( '*NONE' | STRING) ')';
+	
+// INTPREC(10 | 20) ........ . 5-31
+INTPREC: 'INTPREC' '(' ( '10' | '20' ) ')';
+	
+// LANGID(*JOBRUN | *JOB |'language-identifier') ........ . 5-31
+LANGID: 'LANGID' '(' ('*JOBRUN' | '*JOB' | STRING) ')';
+	
+// MAIN(main_procedure_name) .... . 5-31
+MAIN: 'MAIN' '(' STRING ')';
+	
+// NOMAIN ........... . 5-33
+NOMAIN: 'NOMAIN';
+	
+// OPENOPT (*{NO}INZOFL *{NO}CVTDATA) 5-33
+OPENOPT: 'OPENOPT' '(' ( ('*INZOFL' | '*NOINZOFL') | ('*CVTDATA' | '*NOCVTDATA') ) ')';
+
+// OPTIMIZE(*NONE | *BASIC | *FULL) . . 5-33
+OPTIMIZE: 'OPTIMIZE' '(' ('*NONE' | '*BASIC' | '*FULL') ')';
+	
+// OPTION(*{NO}XREF *{NO}GEN *{NO}SECLVL *{NO}SHOWCPY *{NO}EXPDDS *{NO}EXT *{NO}SHOWSKP) *{NO}SRCSTMT) *{NO}DEBUGIO) *{NO}UNREF) .......... . 5-34
+OPTION: 'OPTION' '(' ( 	('*XREF'	| '*NOXREF'   )	|
+						('*SECLVL'  | '*NOSECLVL' )	|
+						('*SHOWCPY' | '*NOSHOWCPY')	|
+						('*EXPDDS'	| '*NOEXPDDS' )	|
+						('*EXT'		| '*NOEXT'    )	|
+						('*SHOWSKP' | '*NOSHOWSKP')	|
+						('*SRCSTMT' | '*NOSRCSTMT')	|
+						('*DEBUGIO' | '*NODEBUGIO') |
+						('*UNREF'	| '*NOUNREF'  )
+					) ')'
+	;
+
+// PGMINFO(*PCML | *NO | *DCLCASE { :*MODULE ... } ) ......... . 5-35
+PGMINFO: 'PGMINFO' '(' ( '*PCML' | '*NO' | '*DCLCASE' | '*MODULE') ')';
+
+// PRFDTA(*NOCOL | *COL) ..... . 5-36
+PRFDTA: 'PRFDTA' '(' ( '*NOCOL' | '*COL' ) ')';
+	
+// SRTSEQ(*HEX | *JOB | *JOBRUN | *LANGIDUNQ | *LANGIDSHR | 'sort-table-name') ......... . 5-36
+SRTSEQ: 'SRTSEQ' '(' ('*HEX' | '*JOB' | '*JOBRUN' | '*LANGIDUNQ' | '*LANGIDSHR' | STRING);
+	
+// STGMDL(*INHERIT | *SNGLVL | *TERASPACE) .......... . 5-37
+STGMDL: 'STGMDL' '(' ('*INHERIT' | '*SNGLVL' | '*TERASPACE') ')';
+	
+// TEXT(*SRCMBRTXT | *BLANK | 'description') .......... . 5-37
+TEXT: 'TEXT' '(' ('*SRCMBRTXT' | '*BLANK' | STRING);
+	
+// THREAD(*CONCURRENT | *SERIALIZE) 5-38
+THREAD: 'THREAD' '(' ('CONCURRENT' | '*SERIALIZE') ')';
+	
+// TIMFMT(fmt{separator}) ...... . 5-39
+
+// TRUNCNBR(*YES | *NO) ...... . 5-39
+TRUNCNBR: 'TRUNCNBR' '(' ('*YES' | '*NO') ')';
+	
+// USRPRF(*USER | *OWNER) ..... . 5-39
+USRPRF: 'USRPRF' '(' ('*USER' | '*OWNER') ')';
+	
+// VALIDATE(*NODATETIME) ..... . 5-40
+VALIDATE: 'VALIDATE(*NODATETIME)' ;	
+	
+//------------------------------------------------------------------------------
