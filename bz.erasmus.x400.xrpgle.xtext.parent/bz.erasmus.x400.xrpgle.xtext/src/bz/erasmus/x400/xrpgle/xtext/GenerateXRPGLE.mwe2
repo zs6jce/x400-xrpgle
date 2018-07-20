@@ -39,6 +39,9 @@ Workflow {
 			validator = {
 				// composedCheck = "org.eclipse.xtext.validation.NamesAreUniqueValidator"
 			}
+			junitSupport = {
+				junitVersion = "5"
+			}
 			parserGenerator = {
 				debugGrammar = true
 				options = {

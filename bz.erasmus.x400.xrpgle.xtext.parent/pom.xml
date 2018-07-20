@@ -7,12 +7,11 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<xtextVersion>2.14.0</xtextVersion>
+		<xtextVersion>2.15.0-SNAPSHOT</xtextVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>10</maven.compiler.source>
 		<maven.compiler.target>10</maven.compiler.target>
 		<!-- Tycho settings -->
-		<!-- Java 10 and JUnit 5 support require Tycho 1.2.0, which was not released at release date of Xtext 2.14.0. When not available downgrade to Java 9, JUnit 4 and Tycho 1.1.0. -->
 		<tycho-version>1.2.0</tycho-version>
 		<!-- Define overridable properties for tycho-surefire-plugin -->
 		<platformSystemProperties></platformSystemProperties>
@@ -25,6 +24,8 @@
 		<module>bz.erasmus.x400.xrpgle.xtext.ide</module>
 		<module>bz.erasmus.x400.xrpgle.xtext.ui</module>
 		<module>bz.erasmus.x400.xrpgle.xtext.target</module>
+		<module>bz.erasmus.x400.xrpgle.xtext.feature</module>
+		<module>bz.erasmus.x400.xrpgle.xtext.repository</module>
 		<module>bz.erasmus.x400.xrpgle.xtext.tests</module>
 		<module>bz.erasmus.x400.xrpgle.xtext.ui.tests</module>
 	</modules>
@@ -35,6 +36,47 @@
 				<artifactId>tycho-maven-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-source-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<executions>
+					<execution>
+						<id>plugin-source</id>
+						<goals>
+							<goal>plugin-source</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho.extras</groupId>
+				<artifactId>tycho-source-feature-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<executions>
+					<execution>
+						<id>source-feature</id>
+						<phase>package</phase>
+						<goals>
+							<goal>source-feature</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-p2-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<executions>
+					<execution>
+						<id>attach-p2-metadata</id>
+						<phase>package</phase>
+						<goals>
+							<goal>p2-metadata</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
@@ -241,6 +283,12 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+			<id>sonatype-snapshots</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases><enabled>false</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
@@ -253,6 +301,12 @@
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>sonatype-snapshots</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases><enabled>false</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</pluginRepository>
 	</pluginRepositories>
 	<profiles>
