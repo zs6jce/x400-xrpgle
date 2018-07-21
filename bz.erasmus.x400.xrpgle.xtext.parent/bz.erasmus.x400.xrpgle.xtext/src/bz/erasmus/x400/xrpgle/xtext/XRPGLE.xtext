@@ -25,9 +25,334 @@ Statement:
 AbstractControl:
 	Control
 ;
-Control:
-	'CTL-OPT' keywords+=(GenericKeyword)+ ';'
-;
+		Control:
+			'CTL-OPT' keywords+=ControlOption+ ';'
+		;
+
+		ControlOption:
+			ControlOptionALLOC		|
+			ControlOptionACTGRP		|
+			ControlOptionALTSEQ		|
+			ControlOptionALWNULL	|		
+			ControlOptionAUT		|
+			ControlOptionBNDDIR		|
+			ControlOptionCCSID		|
+			ControlOptionCCSIDCVT	|
+			ControlOptionCOPYNEST	|
+			ControlOptionCOPYRIGHT	|
+			ControlOptionCURSYM		|
+			ControlOptionCVTOPT		|
+			ControlOptionDCLOPT		|
+			ControlOptionDATEDIT	|
+			ControlOptionDATEFMT	|
+			ControlOptionDEBUG		|
+			ControlOptionDECEDIT	|
+			ControlOptionDECPREC	|
+			ControlOptionDFTACTGRP	|
+			ControlOptionDFTNAME	|
+			ControlOptionENBPFRCOL	|
+			ControlOptionEXPROPTS	|
+			ControlOptionEXTBININT	|
+			ControlOptionFIXNBR		|
+			ControlOptionFLTDIV		|
+			ControlOptionFORMSALIGN |
+			ControlOptionFTRANS		|
+			ControlOptionGENLVL		|
+			ControlOptionINDENT		|
+			ControlOptionINTPREC	|
+			ControlOptionLANGID		|
+			ControlOptionMAIN		|
+			ControlOptionNOMAIN		|
+			ControlOptionOPENOPT	|
+			ControlOptionOPTIMIZE	|
+			ControlOptionOPTION		|
+			ControlOptionPGMINFO	|
+			ControlOptionPRFDTA		|
+			ControlOptionSRTSEQ		|
+			ControlOptionSTGMDL		|
+			ControlOptionTEXT		|
+			ControlOptionTHREAD		|
+			ControlOptionTIMFMT		|
+			ControlOptionTRUNCNBR	|
+			ControlOptionUSRPRF		|
+			ControlOptionVALIDATE
+		;
+		
+		// ALLOC - Start ---------------------------------------------------
+		
+		ControlOptionALLOC:
+			'ALLOC' '(' option=AllocOptions ')'
+		;
+		enum AllocOptions:
+			STGMDL='*STGMDL'		|
+			TERRASPACE='*TERASPACE'	|
+			SNGLVL='*SNGLVL'
+		;
+		// ALLOC - End -----------------------------------------------------
+		
+		// ACTGRP - Start ---------------------------------------------------
+		ControlOptionACTGRP:
+			'ACTGRP' '(' option=(ActGrpOptions) ')'
+		;
+		ActGrpOptions:
+			'*STGMDL' | '*NEW' | '*CALLER' | STRING
+		;
+		// ACTGRP - End -----------------------------------------------------
+		
+		// ALTSEQ - Start ---------------------------------------------------
+		ControlOptionALTSEQ: {ControlOptionALTSEQ}
+			'ALTSEQ' (
+				 '(' option=AltSeqOptions ')'
+			)?
+		;
+		enum AltSeqOptions:
+			NONE='*NONE' |
+			SRC='*SRC'	 |
+			EXT='*EXT'
+		;
+		// ALTSEQ - End -----------------------------------------------------
+		
+		// ALWNULL - Start ---------------------------------------------------
+		ControlOptionALWNULL: {ControlOptionALWNULL}
+			'ALWNULL' (
+				 '(' option=AlwNullOptions ')'
+			)?
+		;
+		enum AlwNullOptions:
+			NO='*NO'				|
+			INPUTONLY='*INPUTONLY'	|
+			USRCTL='*USRCTL'
+		;
+		// ALWNULL - End -----------------------------------------------------
+		
+		// AUT - Start -------------------------------------------------------
+		ControlOptionAUT:
+			'AUT' '(' option=(AutOptions) ')'
+		;
+		AutOptions:
+			'*LIBRCRTAUT' | '*ALL' | '*CHANGE' | '*USE' | '*EXCLUDE' | STRING
+		;
+		// AUT - End --------------------------------------------------------
+		
+		// BNDDIR - Start ---------------------------------------------------
+		ControlOptionBNDDIR:
+			'BNDDIR' '(' options+=STRING (':' options+=STRING)* ')'
+		;
+		// BNDDIR - End -----------------------------------------------------
+		
+		// CCSID - Start ----------------------------------------------------
+		ControlOptionCCSID:
+			'CCSID' '('( 
+				option=( ControlOptionCCSIDExact	|
+						 ControlOptionCCSIDChar		|
+						 ControlOptionCCSIDGraph	|
+						 ControlOptionCCSIDUcs2
+				)
+			)')'
+		;
+		ControlOptionCCSIDExact:
+			parm1='*EXACT'
+		;
+		ControlOptionCCSIDChar:
+			parm1='*CHAR' ':' parm2=CCSIDCharOptions
+		;
+		CCSIDCharOptions:
+			'*JOBRUN' | '*JOBRUNMIX' | '*UTF8' | '*HEX' | INT
+		;
+		ControlOptionCCSIDGraph:
+			parm1='*GRAPH' ':' parm2=CCSIDGraphOptions
+		;
+		CCSIDGraphOptions:
+			'*JOBRUN' | '*SRC' | '*HEX' | '*IGNORE' | INT
+		;
+		ControlOptionCCSIDUcs2:
+			parm1='*UCS2' ':' parm2=CCSIDUcs2Options
+		;
+		CCSIDUcs2Options:
+			'*UTF16' | INT
+		;
+		// CCSID - End ------------------------------------------------------
+		
+		// CCSIDCVT - End ---------------------------------------------------
+		ControlOptionCCSIDCVT:
+			'CCSIDCVT' '(' option=(CCSIDCVTOptions) ')'
+		;
+		enum CCSIDCVTOptions:
+			EXCP='*EXCP' |
+			LIST='*LIST'
+		;
+		// CCSIDCVT - End ---------------------------------------------------
+		
+		ControlOptionCOPYNEST:
+			'COPYNEST' '(' option=INT ')'
+		;
+		ControlOptionCOPYRIGHT:
+			'COPYRIGHT' '(' option=STRING ')'
+		;
+		ControlOptionCURSYM:
+			'CURSYM' '(' option=STRING ')'
+		;
+		// CVTOPT - Start ---------------------------------------------------
+		ControlOptionCVTOPT:
+			'CVTOPT' '(' options+=CvtOptOptions (':' options+=CvtOptOptions)* ')'
+		;
+		enum CvtOptOptions:
+			DATETIME='*DATETIME'		|
+			NODATETIME='*NODATETIME'	|
+			GRAPHIC='*GRAPHIC'			|
+			NOGRAPHIC='*NOGRAPHIC'		|
+			VARCHAR='*VARCHAR'			|
+			NOVARCHAR='*NOVARCHAR'		|
+			VARGRAPHIC='*VARGRAPHIC'	|
+			NOVARGRAPHIC='*NOVARGRAPHIC'
+		;
+		// CVTOPT - End -----------------------------------------------------
+		
+		// DCLOPT - Start ---------------------------------------------------
+		ControlOptionDCLOPT:
+			'DCLOPT' '(' option='*NOCHGDSLEN' ')'
+		;
+		// DCLOPT - End -----------------------------------------------------
+		
+		ControlOptionDATEDIT:
+			'DATEDIT' '(' fmt='TODO' sep='/' ')'
+		;
+		ControlOptionDATEFMT:
+			'DATFMT' '(' fmt='TODO' sep='/' ')'
+		;
+		
+		// DEBUG - Start ----------------------------------------------------
+		ControlOptionDEBUG: {ControlOptionDEBUG}
+			'DEBUG' (
+				 '(' option=DebugOptions ')'
+			)?
+		;
+		enum DebugOptions:
+			INPUT='*INPUT'	|
+			DUMP='*DUMP'	|
+			XMLSAX='*XMLSAX'|
+			NO='*NO'		|
+			YES='*YES'
+		;
+		// DEBUG - End ------------------------------------------------------
+		
+		ControlOptionDECEDIT:
+			'DECEDIT' '(' option=( '*JOBRUN' | STRING ) ')'
+		;
+		ControlOptionDECPREC:
+			'DECPREC' '(' option=('30' | '31' | '63') ')'
+		;
+		ControlOptionDFTACTGRP:
+			'DFTACTGRP' '(' option=('*YES' | '*NO' ) ')'
+		;
+		ControlOptionDFTNAME:
+			'DFTNAME' '(' option=STRING ')'
+		;
+		ControlOptionENBPFRCOL:
+			'ENBPFRCOL' '(' option=('*PEP' | '*ENTRYEXIT' | '*FULL') ')'
+		;
+		ControlOptionEXPROPTS:
+			'EXPROPTS' '(' option=('*MAXDIGITS' | '*RESDECPOS') ')'
+		;
+		ControlOptionEXTBININT: {ControlOptionEXTBININT}
+			'EXTNININT' ( '(' option=( '*NO' | '*YES') ')' )?
+		;
+		ControlOptionFIXNBR:
+			'FIXNBR' '('
+				option=( ('*ZONED'|'*NOZONED') | ('*INPUTPACKED'|'*NOINPUTPACKED') ) // <<<=== Good Idea or Bad
+			')'
+		;
+		ControlOptionFLTDIV: {ControlOptionFLTDIV}
+			'FLTDIV' ( '(' option=( '*NO' | '*YES') ')' )?
+		;
+		ControlOptionFORMSALIGN: {ControlOptionFORMSALIGN}
+			'FORMSALIGN' ( '(' option=( '*NO' | '*YES') ')' )?
+		;
+		ControlOptionFTRANS: {ControlOptionFTRANS}
+			'FTRANS' ( '(' option=( '*NONE' | '*SRC' )')')?
+		;
+		ControlOptionGENLVL:
+			'GENLVL' '(' option=INT ')'
+		;
+		ControlOptionINDENT:
+			'INDENT' '(' option=( '*NONE' | STRING) ')'
+		;
+		ControlOptionINTPREC:
+			'INTPREC' '(' option=( '10' | '20' ) ')'
+		;
+		ControlOptionLANGID:
+			'LANGID' '(' option=('*JOBRUN' | '*JOB' | STRING) ')'
+		;	
+		ControlOptionMAIN:
+			'MAIN' '(' option=STRING ')'
+		;
+		ControlOptionNOMAIN:
+			option='NOMAIN'
+		;
+		ControlOptionOPENOPT:
+			'OPENOPT' '(' option=( ('*INZOFL' | '*NOINZOFL') | ('*CVTDATA' | '*NOCVTDATA') ) ')'
+		;
+		ControlOptionOPTIMIZE:
+			'OPTIMIZE' '(' option=('*NONE' | '*BASIC' | '*FULL') ')'
+		;
+		ControlOptionOPTION:
+			'OPTION' '(' options+=OptionOptions ')'
+		;
+		enum OptionOptions:
+			XREF='*XREF'			|
+			NOXREF='*NOXREF'		|
+			SECLVL='*SECLVL'		|
+			NOSECLVL='*NOSECLVL'	|
+			SHOWCPY='*SHOWCPY'		|
+			NOSHOWCPY='*NOSHOWCPY'	|
+			EXPDDS='*EXPDDS'		|
+			NOEXPDDS='*NOEXPDDS'	|
+			EXP='*EXT'				|
+			NOEXP='*NOEXT'			|
+			SHOWSKP='*SHOWSKP'		|
+			NOSHOWSKP='*NOSHOWSKP'	|
+			SRCSTMT='*SRCSTMT'		|
+			NOSRCSTMT='*NOSRCSTMT'	|
+			DEBUGIO='*DEBUG'		|
+			NODEBUGIO='*NODEBUG'	|
+			UNREF='*UNREF'			|
+			NOUNREF='*NOUNREF'
+		;
+		ControlOptionPGMINFO:
+			'PGMINFO' '(' option=( '*PCML' | '*NO' | '*DCLCASE' ) (':' module?='*MODULE')? ')'
+		;
+		ControlOptionPRFDTA:
+			'PRFDTA' '(' option=( '*NOCOL' | '*COL' ) ')'
+		;
+		ControlOptionSRTSEQ:
+			'SRTSEQ' '(' option=('*HEX' | '*JOB' | '*JOBRUN' | '*LANGIDUNQ' | '*LANGIDSHR' | STRING) ')'
+		;
+		ControlOptionSTGMDL:
+			'STGMDL' '(' option=('*INHERIT' | '*SNGLVL' | '*TERASPACE') ')'
+		;
+		ControlOptionTEXT:
+			'TEXT' '(' option=('*SRCMBRTXT' | '*BLANK' | STRING) ')'
+		;
+		ControlOptionTHREAD:
+			'THREAD' '(' option=('*CONCURRENT' | '*SERIALIZE') ')'
+		;
+		ControlOptionTIMFMT:
+			'TIMFMT' '(' fmt='TODO' sep='/' ')'
+		;
+		ControlOptionTRUNCNBR:
+			'TRUNCNBR' '(' option=('*YES' | '*NO') ')'
+		;
+		ControlOptionUSRPRF:
+			'USRPRF' '(' option=('*USER' | '*OWNER') ')'
+		;
+		// VALIDATE - Start -------------------------------------------------
+		ControlOptionVALIDATE:
+			// Method 1:
+			'VALIDATE' '(' option='*NODATETIME' ')'
+		;
+		// VALIDATE - End ---------------------------------------------------
+
+//------------------------------------------------------------------------------
 
 /*******************************************************************************
  * File Descriptions (F-Specs)
