@@ -59,7 +59,11 @@ StandAloneField:
 ;
 
 NamedConstant:
-	'DCL-C' name=ID keywords+=(GenericKeyword)* ';'
+	'DCL-C' name=ID (
+		('CONST' '(' (const=NamedConstantValue) ')')
+		|
+		const=NamedConstantValue
+	) ';'
 ;
 
 DataStructure:
@@ -282,6 +286,12 @@ ProcedureCall:
 ;
 ProcedureCallRef:
    Prototype | ProcedureDef
+;
+
+NamedConstantValue:
+	{IntConstant}	  value = INT	 |
+	{StringConstant}  value = STRING |
+	{BooleanConstant} value = BOOL
 ;
 
 GenericKeyword:
