@@ -3,12 +3,8 @@ grammar bz.erasmus.x400.xrpgle.xtext.XRPGLE with org.eclipse.xtext.common.Termin
 generate xRPGLE "http://www.erasmus.bz/x400/xrpgle/xtext/XRPGLE"
 
 Model: {Model}
-	statments+=AbstractStatement*;
-
-AbstractStatement: {AbstractStatement}
-	('**FREE' WS)
+	('**FREE')?
 	statements+=Statement*
-	('**END-FREE' WS)?
 ;
 Statement:
 	AbstractCompilerDirective	|	
@@ -77,9 +73,8 @@ AbstractControl:
 			ControlOptionUSRPRF		|
 			ControlOptionVALIDATE
 		;
-		
-		// ALLOC - Start ---------------------------------------------------
-		
+
+		// ALLOC - Start ---------------------------------------------------		
 		ControlOptionALLOC:
 			'ALLOC' '(' option=AllocOptions ')'
 		;
@@ -127,10 +122,10 @@ AbstractControl:
 		
 		// AUT - Start -------------------------------------------------------
 		ControlOptionAUT:
-			'AUT' '(' option=(AutOptions) ')'
+			'AUT' '(' option=AutOptions ')'
 		;
 		AutOptions:
-			'*LIBRCRTAUT' | '*ALL' | '*CHANGE' | '*USE' | '*EXCLUDE' | STRING
+			'*LIBCRTAUT' | '*ALL' | '*CHANGE' | '*USE' | '*EXCLUDE' | STRING
 		;
 		// AUT - End --------------------------------------------------------
 		
@@ -173,7 +168,7 @@ AbstractControl:
 		;
 		// CCSID - End ------------------------------------------------------
 		
-		// CCSIDCVT - End ---------------------------------------------------
+		// CCSIDCVT - Start -------------------------------------------------
 		ControlOptionCCSIDCVT:
 			'CCSIDCVT' '(' option=(CCSIDCVTOptions) ')'
 		;
@@ -240,7 +235,7 @@ AbstractControl:
 			'DECEDIT' '(' option=( '*JOBRUN' | STRING ) ')'
 		;
 		ControlOptionDECPREC:
-			'DECPREC' '(' option=('30' | '31' | '63') ')'
+			'DECPREC' '(' option=INT ')'
 		;
 		ControlOptionDFTACTGRP:
 			'DFTACTGRP' '(' option=('*YES' | '*NO' ) ')'
@@ -259,7 +254,7 @@ AbstractControl:
 		;
 		ControlOptionFIXNBR:
 			'FIXNBR' '('
-				option=( ('*ZONED'|'*NOZONED') | ('*INPUTPACKED'|'*NOINPUTPACKED') ) // <<<=== Good Idea or Bad
+				option=( ('*ZONED'|'*NOZONED') | ('*INPUTPACKED'|'*NOINPUTPACKED') )
 			')'
 		;
 		ControlOptionFLTDIV: {ControlOptionFLTDIV}
@@ -278,13 +273,13 @@ AbstractControl:
 			'INDENT' '(' option=( '*NONE' | STRING) ')'
 		;
 		ControlOptionINTPREC:
-			'INTPREC' '(' option=( '10' | '20' ) ')'
+			'INTPREC' '(' option=INT ')'
 		;
 		ControlOptionLANGID:
 			'LANGID' '(' option=('*JOBRUN' | '*JOB' | STRING) ')'
 		;	
 		ControlOptionMAIN:
-			'MAIN' '(' option=STRING ')'
+			'MAIN' '(' option=ID ')'
 		;
 		ControlOptionNOMAIN:
 			option='NOMAIN'
@@ -296,7 +291,7 @@ AbstractControl:
 			'OPTIMIZE' '(' option=('*NONE' | '*BASIC' | '*FULL') ')'
 		;
 		ControlOptionOPTION:
-			'OPTION' '(' options+=OptionOptions ')'
+			'OPTION' '(' options+=OptionOptions (':' options+=OptionOptions)* ')'
 		;
 		enum OptionOptions:
 			XREF='*XREF'			|
@@ -371,7 +366,7 @@ FileDescription:
  *
  **/
 AbstractDefinition:
-	StandAloneField	|
+	StandAloneField |
 	NamedConstant	|
 	DataStructure	|
 	Prototype		|
@@ -380,7 +375,7 @@ AbstractDefinition:
 ;
 
 StandAloneField:
-	'DCL-S' name=ID keywords+=(GenericKeyword)* ';'
+	'DCL-S' name=ID datatype=AbstractDataType keywords+=(GenericKeyword)* ';'
 ;
 
 NamedConstant:
@@ -392,17 +387,17 @@ NamedConstant:
 ;
 
 DataStructure:
-	'DCL-DS' name=ID keywords+=(GenericKeyword)* ';'
-	subf+=(DataStructureSubField)*
-	'END-DS' ';'
+   'DCL-DS' name=OptionalID keywords+=(GenericKeyword)* ';'
+   subFields+=(SubField | DataStructure)*
+   'END-DS' ';'
 ;
 
-DataStructureSubField:
-	('DCL-SUBF')? name=ID keywords+=(GenericKeyword)* ';' 
+SubField:
+	('DCL-SUBF')? name=OptionalID datatype=AbstractDataType keywords+=(GenericKeyword)* ';' 
 ;
 
 Prototype:
-	'DCL-PR' name=ID keywords+=(GenericKeyword)* ';'
+	'DCL-PR' name=ID datatype=AbstractDataType keywords+=(GenericKeyword)* ';'
 	parms+=(PrototypedParameter)*
 	'END-PR' ';'
 ;
@@ -415,28 +410,31 @@ ProcedureDef:
 	'END-PROC' ';'
 ;
 ProcedureDefOnERROR:
-	{ProcedureDefOnERROR} 'ON-EXIT' ';'
+	{ProcedureDefOnERROR}
+	'ON-EXIT' ';'
 	statements+=AbstractCalculation*
 ;
 
 ProcedureInterface:
-	'DCL-PI' name=(ID|'*N') keywords+=(GenericKeyword)* ';'
+	'DCL-PI' name=OptionalID datatype=AbstractDataType keywords+=(GenericKeyword)* ';'
 	parms+=(PrototypedParameter)*
 	'END-PI' ';'
 ;
 
 PrototypedParameter:
-	('DCL-PARM')? name=ID keywords+=(GenericKeyword)* ';'
+	('DCL-PARM')? name=OptionalID datatype=AbstractDataType keywords+=(GenericKeyword)* ('CONST')? ';'
 ;
+//--------------------------------------------------------------------------
+
 /******************************************************************************
  * Expressions & Calculations (C-Specs)
  * 
  */
  
 AbstractCalculation:
-	CalculationAssignment		|
-	CalculationProcedureCall	|
-	CalculationReturn			|
+	CalculationAssignment	 |
+	CalculationProcedureCall |
+	CalculationReturn		 |
 	AbstactCalculationBlock
 ;
 
@@ -461,16 +459,17 @@ CalculationProcedureCall: //ProcedureCallStatement:
 ;
 
 CalculationReturn:
-	{CalculationReturn} 'RETURN' (exp=Expression)? ';'
+	{CalculationReturn}
+	'RETURN' (exp=Expression)? ';'
 ;
 AbstactCalculationBlock: //AbstractStatement:
 	CalculationBlockDO		|
 	CalculationBlockFOR		|
-	CalculationBlockIF		|	
+	CalculationBlockIF		|
 	CalculationBlockMONITOR	|
 	CalculationBlockSELECT	|
 	CalculationBlockSUBROUTINE
-; 
+;
 CalculationBlockDO: {CalculationBlockDO} 
 	(type='DOW'| type='DOU') condition=Expression ';'
 	statements+=AbstractCalculation*
@@ -478,17 +477,28 @@ CalculationBlockDO: {CalculationBlockDO}
 ;
 CalculationBlockFOR:
 // https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_73/rzasd/zzfor.htm
-	'FOR' indexname=Expression 
-		( ('BY'		by=Expression)	|
-		  ('TO'		to=Expression)	|
-		  ('DOWNTO' downto=Expression)
-		)';'
+// Note for future...
+//		If it becomes important to be able to specify BY/TO in any sequence.
+//		Just add another optional "ForIncrement" rule after the "ForLimit" rule,
+//		and then validate in code that the ForIncrementer only occurs once.
+//		I really hope that works, but being able to specify it in diff sequence,
+//		is not my preference.
+	'FOR' index=ForIndex (increment=ForIncrement)? (limit=ForLimit)? ';'
 	statements+=AbstractCalculation*
 	'ENDFOR' ';'
 ;
+		ForIndex:
+			indexname=[AssignableVariable] ( op=( '=' | '+=' | '-=' | '*=' | '/=' | '**=' ) exp=Expression)?
+		;
+		ForIncrement:
+			'BY' by=Expression
+		;
+		ForLimit:
+			op=('TO' | 'DOWNTO') to=Expression
+		;
 CalculationBlockIF:
 	'IF' condition=Expression ';'
-	 statements+=AbstractCalculation*
+	statements+=AbstractCalculation*
      elseifs+=CalculationBlockIfELSEIF*
      else=CalculationBlockIfELSE?
 	'ENDIF' ';'
@@ -512,13 +522,18 @@ CalculationBlockMonitorONERROR:
 	statements+=AbstractCalculation*
 ;	
 CalculationBlockSELECT:
-	'SELECT'
-	whens+=CalculationBlockSelectWHEN*
-	other?='OTHER' ';'
+	'SELECT' ';'
+	whens+=CalculationBlockSelectWHEN+
+	other=CalculationBlockSelectOTHER?
 	'ENDSL' ';'
 ;
 CalculationBlockSelectWHEN:
 	'WHEN' condition=Expression ';'
+	statements+=AbstractCalculation*
+;
+CalculationBlockSelectOTHER:
+	{CalculationBlockSelectOTHER}
+	'OTHER' ';'
 	statements+=AbstractCalculation*
 ;
 CalculationBlockSUBROUTINE:
@@ -589,11 +604,73 @@ Atomic returns Expression:
 	{StringConstant} value=STRING	|
 	{BooleanConstant} value=BOOL
 	;
+//--------------------------------------------------------------------------
 
 /******************************************************************************
- * Helper Rules
+ * Datatypes
  **/
- 
+AbstractDataType:
+// www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_72/rzasd/dtdf.htm
+	CharacterDataTypes	|
+	NumericDataTypes	|
+	DateTimeDataTypes
+;
+
+CharacterDataTypes:
+// www.ibm.com/support/knowledgecenter/ssw_ibm_i_72/rzasd/chartype.htm
+	DataTypeCHAR		|
+	DataTypeVARCHAR		|
+	DataTypeGRAPH		|
+	DataTypeVARGRAPH	|
+	DataTypeUCS2		|
+	DataTypeVARUCS2		|	
+	DataTypeIND
+;
+
+NumericDataTypes:
+// www.ibm.com/support/knowledgecenter/ssw_ibm_i_72/rzasd/dnum.htm
+//	KeywordBINDEC	- Not Supported By XRPGLE, use alternative like INT
+//	KeywordFLOAT	- @Christoff has never needed to use, thus not included in v1 of XRPGLE
+	DataTypeINT		|
+	DataTypePACKED	|
+	DataTypeUNS		|
+	DataTypeZONED
+;
+
+DateTimeDataTypes:
+//	DataTypeDATE		|
+//	DataTypeTIME		|
+	DataTypeTIMESTAMP
+;
+
+DataTypeCHAR:
+	'CHAR' '(' length=INT ')';
+DataTypeVARCHAR:
+	'VARCHAR'  '(' length=INT ( separator?=':' bytes=INT)? ')';
+DataTypeGRAPH:
+	'GRAPH' '(' length=INT ')';
+DataTypeVARGRAPH:
+	'VARGRAPH' '(' length=INT ( separator?=':' bytes=INT)? ')';
+DataTypeUCS2:
+	'UCS2' '(' length=INT ')';
+DataTypeVARUCS2:
+	'VARUCS2' '(' length=INT ( separator?=':' bytes=INT)? ')';
+DataTypeIND: {KeywordIND}
+	'IND' ;
+DataTypeINT:
+	'INT' '(' digits=INT ')';
+DataTypePACKED:
+	'PACKED' '(' digits=INT (':' decpos=INT)? ')';
+DataTypeUNS:
+	'UNS' '(' digits=INT ')';
+DataTypeZONED:
+	'ZONED' '(' digits=INT (':' decpos=INT)? ')';
+//DataTypeDATE: {DataTypeDATE}
+//	'DATE' ('(' format=DATFMT (separator=DATSEP)? ')')?;
+//DataTypeTIME: {DataTypeTIME}
+//	'TIME' ('(' format=TIMFMT (separator=TIMSEP)? ')')?;
+DataTypeTIMESTAMP: {DataTypeTIMESTAMP}
+	'TIMESTAMP' ('(' fractsec=INT ')')?; //fractional_seconds
 AbstractDeclaration:
 	FileDescription			| 
 	StandAloneField			|
@@ -620,12 +697,14 @@ NamedConstantValue:
 ;
 
 GenericKeyword:
-	name=ID ('(' 
-		params+=GenericKeywordParms (':' params+=GenericKeywordParms)*
-	')')? 	
+	(
+		keyword=ID ('(' 
+			params+=GenericKeywordParms (':' params+=GenericKeywordParms)*
+		')')?
+	)
 ;
 GenericKeywordParms:
-	STRING|SPLAT_OPERATOR|ID|INT
+	STRING|BOOL|SPLAT_OPERATOR|ID|INT
 ;
 
 VariableOrConstDef:
@@ -668,6 +747,9 @@ CompilerDirectiveFREE returns CompilerDirective:
 ;
 
 //--------------------------------------------------------------------------
+OptionalID:
+	ID |'*N'
+;
 
 /******************************************************************************
  * Terminals
